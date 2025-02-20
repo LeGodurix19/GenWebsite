@@ -1,0 +1,18 @@
+<section class="pricing container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for plan in plans %}
+        <div class="plan bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition">
+            <h3 class="text-xl font-bold text-blue-600">{{ plan.name }}</h3>
+            <p class="text-gray-700 mt-2 text-lg font-semibold">{{ plan.price }} € / mois</p>
+            <ul class="mt-4 space-y-2">
+                {% for feature in plan.features %}
+                <li class="flex items-center gap-2 text-gray-600">
+                    <span class="text-green-500">✔</span> {{ feature }}
+                </li>
+                {% endfor %}
+            </ul>
+            <a href="{{ plan.url }}" class="block mt-6 bg-blue-600 text-white text-center py-2 rounded-lg shadow-md hover:bg-blue-700 transition">Choisir</a>
+        </div>
+        {% endfor %}
+    </div>
+</section>

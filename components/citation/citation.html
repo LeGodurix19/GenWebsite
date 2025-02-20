@@ -1,0 +1,8 @@
+<div class="testimonial-container max-w-lg mx-auto mt-8">
+    {% for citation in citations %}
+    <blockquote class="citation bg-gray-100 p-6 rounded-lg shadow-md text-center mb-4">
+        <p class="text-lg italic text-gray-700">"{{ citation.quote }}"</p>
+        <cite class="block mt-4 text-gray-900 font-semibold">- {{ citation.author }}</cite>
+    </blockquote>
+    {% endfor %}
+</div>

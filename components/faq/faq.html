@@ -1,0 +1,23 @@
+<section class="faq container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        {% for question in faqs %}
+        <div class="faq-item border-b border-gray-300 py-4">
+            <h3 class="faq-question text-lg font-semibold text-blue-600 cursor-pointer">{{ question.q }}</h3>
+            <p class="faq-answer text-gray-700 mt-2 hidden">{{ question.a }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const questions = document.querySelectorAll(".faq-question");
+
+        questions.forEach(question => {
+            question.addEventListener("click", () => {
+                const answer = question.nextElementSibling;
+                answer.classList.toggle("hidden");
+            });
+        });
+    });
+</script>

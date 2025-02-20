@@ -1,0 +1,32 @@
+<div class="carousel relative w-full overflow-hidden">
+    <div class="flex transition-transform duration-500 ease-in-out" id="carousel-slides">
+        {% for image in carousel_images %}
+        <div class="slide w-full flex-none bg-gray-200 text-center p-10">
+            <img src="{{ image.src }}" alt="{{ image.alt }}" class="mx-auto">
+        </div>
+        {% endfor %}
+    </div>
+    <button class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white text-black px-4 py-2 shadow-md" id="left_event_move">◀</button>
+    <button class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white text-black px-4 py-2 shadow-md" id="right_event_move">▶</button>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const timeout = 5000;
+        const slides = document.getElementById("carousel-slides");
+        const leftButton = document.getElementById("left_event_move");
+        const rightButton = document.getElementById("right_event_move");
+        let index = 0;
+        
+        function moveSlide(direction) {
+            const totalSlides = slides.children.length;
+            index = (index + direction + totalSlides) % totalSlides;
+            slides.style.transform = `translateX(-${index * 100}%)`;
+        }
+
+        setInterval(() => moveSlide(1), timeout);
+
+        
+        leftButton.addEventListener("click", () => moveSlide(-1));
+        rightButton.addEventListener("click", () => moveSlide(1));
+    });
+</script>
