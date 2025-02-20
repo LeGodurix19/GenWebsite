@@ -59,6 +59,8 @@ def copy_selected_files(src_folder, dest_folder, file_name):
 
     src_file = os.path.join(src_folder, file_name)
     dest_file = os.path.join(dest_folder, file_name)
+    print(f"📁 Fichier source : {src_file}")
+    print(f"📁 Dossier destination : {dest_folder}")
 
     if os.path.exists(src_file):
         shutil.copy2(src_file, dest_file)
@@ -93,20 +95,24 @@ def copy_component_templates(site_structure):
         """)
 
     # Fichiers spécifiques à copier pour chaque composant
-    files_to_copy = [".html"]
+    files_to_copy = [".html", ".js"]
 
-    for component, folder in ALL_COMPONENTS.items():
-        for file_to_copy in files_to_copy:
-            dest_folder = os.path.join(COMPONENTS_DIR, os.path.basename(folder))
-            src_folder = os.path.join(RACINE, folder)
-            print(f"📁 Copie des fichiers pour le composant {component + file_to_copy}...")
-            print(f"📁 Dossier source : {src_folder}")
-            if os.path.exists(src_folder):
-                copy_selected_files(src_folder, dest_folder, component + file_to_copy)
-            else:
-                print(f"⚠️ Le composant {component} n'existe pas dans {src_folder}")
-
-        print("✅ Component templates copied/created successfully.")
+    print(site_structure)
+    liste_components = [] 
+    for page in site_structure:
+        for component in page['components']:
+            if component not in liste_components:
+                liste_components.append(component)
+                for file_to_copy in files_to_copy:
+                    dest_folder = os.path.join(COMPONENTS_DIR, component)
+                    src_folder = os.path.join(RACINE, "components", component)
+                    print(f"📁 Copie des fichiers pour le composant {component + file_to_copy}...")
+                    print(f"📁 Dossier source : {src_folder}")
+                    if os.path.exists(src_folder):
+                        copy_selected_files(src_folder, dest_folder, component + file_to_copy)
+                    else:
+                        print(f"⚠️ Le composant {component} n'existe pas dans {src_folder}")
+                print("✅ Component templates copied/created successfully.")
 
 def create_base_template():
     os.makedirs(TEMPLATES_DIR, exist_ok=True)
@@ -135,6 +141,9 @@ def create_base_template():
                 <p>&copy; 2025 - Mon Site</p>
             </div>
         </footer>
+        <script>
+            {% block scripts %}{% endblock %}
+        </script>
     </body>
 </html>
     """
@@ -144,49 +153,77 @@ def create_base_template():
     
     print("Base template created successfully.")
 
-def load_component_python(component):
-    py_file = os.path.join(COMPONENTS_PYTHON_DIR, component, f"{component}.py")
+def load_components(page):
+    components = {
+        "python_components": "",
+        "html_components": "",
+        "js_components": ""
+    }
+    for component in page['components']:
+        # python
+        py_file = os.path.join(COMPONENTS_PYTHON_DIR, component, f"{component}.py")
 
-    if os.path.exists(py_file):
-        with open(py_file, "r") as f:
-            code = f.read()
-        return "\n".join([f"    {line}" for line in code.split("\n")])
-    return ""
+        if os.path.exists(py_file):
+            with open(py_file, "r") as f:
+                code = f.read()
+            components["python_components"] += "\n".join([f"    {line}" for line in code.split("\n")])
+
+        html_file = os.path.join(COMPONENTS_DIR, component, f"{component}.html")
+        if os.path.exists(html_file):
+            components["html_components"] += f"\n\t{{% include 'components/{component}/{component}.html' %}}"
+            
+        js_file = os.path.join(COMPONENTS_DIR, component, f"{component}.js")
+        if os.path.exists(js_file):
+            components["js_components"] += f"\n\t{{% include 'components/{component}/{component}.js' %}}"
+        if components["python_components"] != "":
+            components["python_components"] = f"{components['python_components']}\n"
+    return components
+
+
+
 
 def create_views_and_templates(site_structure):
     views_path = os.path.join(BASE_DIR, APP_NAME, "views.py")
     urls_path = os.path.join(BASE_DIR, PROJECT_NAME, "urls.py")
     os.makedirs(TEMPLATES_DIR, exist_ok=True)
 
-    views_content = "from django.shortcuts import render\n\n"
-    urls_content = f"from django.urls import path\nfrom {APP_NAME} import views\n\nurlpatterns = [\n"
+    views_content = """
+from django.shortcuts import render
+
+"""
+    urls_content = f"""
+from django.urls import path
+from {APP_NAME} import views
+    
+urlpatterns = [
+"""
 
     i = 0
     for page in site_structure:
         page_name = page['name']
-        template_path = os.path.join(TEMPLATES_DIR, f"{page_name}.html")
+        components = load_components(page)
 
-        views_content += f"def {page_name}_view(request):\n    context = {{}}\n"
-
-        for component in page['components']:
-            views_content += load_component_python(component) + "\n"
-
-        views_content += f"    return render(request, '{page_name}.html', context=context)\n\n"
+        views_content += f"""
+def {page_name}_view(request):
+    context = {{}}
+{components['python_components']}
+    return render(request, '{page_name}.html', context=context)
+"""
         if i == 0:
             urls_content += f"    path('', views.{page_name}_view, name='{page_name}'),\n"
             i += 1
         else:
             urls_content += f"    path('{page_name}/', views.{page_name}_view, name='{page_name}'),\n"
-    
-        template = """
-        {% extends 'base.html' %}
-        {% block content %}"""
-        for component in page['components']:
-            template += f"\n{{% include 'components/{component}/{component}.html' %}}"
-        template += """{% endblock %}"""
 
-        with open(template_path, "w") as f:
-            f.write(template)
+        with open(os.path.join(TEMPLATES_DIR, f"{page_name}.html"), "w") as f:
+            f.write(f"""
+{{% extends 'base.html' %}}
+{{% block content %}}
+    {components["html_components"]}
+{{% endblock %}}
+{{% block scripts %}}
+    {components["js_components"]}
+{{% endblock %}}""")
 
     urls_content += "]\n"
 
